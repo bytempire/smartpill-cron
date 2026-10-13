@@ -1,0 +1,13 @@
+name: SmartPill reminders
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder cron
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://smartpill-lemon.vercel.app/api/cron"

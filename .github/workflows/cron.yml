@@ -1,9 +1,10 @@
 name: SmartPill reminders
 
+# Hobby Vercel can't run minutely cron. This public-repo job runs every 30
+# minutes and pings SmartPill once per minute for ~28 minutes.
 on:
   schedule:
-    # Every 5 minutes (UTC). GitHub can delay a few minutes.
-    - cron: "*/5 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -12,12 +13,20 @@ permissions:
 jobs:
   tick:
     runs-on: ubuntu-latest
+    timeout-minutes: 32
     steps:
-      - name: Trigger reminder cron
+      - name: Ping SmartPill every minute
         run: |
-          set -euo pipefail
-          echo "Pinging SmartPill cron at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          curl -fsS -m 30 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://smartpill-lemon.vercel.app/api/cron"
-          echo
+          set -u
+          end=$((SECONDS + 1680))
+          i=0
+          while [ "$SECONDS" -lt "$end" ]; do
+            i=$((i + 1))
+            echo "tick $i at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            curl -fsS -m 25 \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "https://smartpill-lemon.vercel.app/api/cron" \
+              || echo "curl failed (will retry)"
+            echo
+            sleep 60
+          done

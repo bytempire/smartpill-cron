@@ -1,13 +1,23 @@
 name: SmartPill reminders
+
 on:
   schedule:
+    # Every 5 minutes (UTC). GitHub can delay a few minutes.
     - cron: "*/5 * * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   tick:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger reminder cron
         run: |
-          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          set -euo pipefail
+          echo "Pinging SmartPill cron at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl -fsS -m 30 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://smartpill-lemon.vercel.app/api/cron"
+          echo
